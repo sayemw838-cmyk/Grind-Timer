@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#0b0d0b" />
+<title>Grind Timer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root{--ink:#0b0d0b;--soft:#121612;--bone:#f3f1e9;--muted:#9aa093;--line:rgba(243,241,233,.16);--dline:rgba(11,13,11,.16);--lime:#d6f85c;--lime-deep:#a5c52d;--orange:#ff784f;--mono:'IBM Plex Mono','Courier New',monospace;--sans:'Space Grotesk',Arial,sans-serif}
+*{box-sizing:border-box}[hidden]{display:none!important}
+html{background:var(--ink)}
+body{margin:0;min-width:320px;background:var(--ink);color:var(--bone);font-family:var(--sans)}
+button,input{font:inherit}
+button:focus-visible,input:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
+.shell{max-width:1120px;margin:0 auto;padding:0 24px 40px}
+.top{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:11px;font-size:14px;font-weight:700;letter-spacing:.11em}
+.mark{width:22px;height:22px;border:2px solid var(--lime);transform:rotate(45deg);display:grid;place-items:center}.mark i{width:8px;height:8px;background:var(--lime)}
+.brand b{color:var(--lime)}
+.chip{display:flex;align-items:center;gap:8px;font:600 11px var(--mono);letter-spacing:.1em;color:var(--lime)}
+.chip i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:28px;padding-top:32px}
+.card{background:var(--bone);color:var(--ink);padding:26px 32px;position:relative}
+.card::before{content:'';position:absolute;top:0;left:0;width:36%;height:4px;background:var(--lime)}
+.task{width:100%;padding:10px 12px;border:1px solid var(--dline);background:transparent;color:var(--ink);font:500 13px var(--mono)}
+.task::placeholder{color:#8a8d83}
+.visual{--d:min(310px,72vw);position:relative;display:grid;place-items:center;height:calc(var(--d) + 36px)}
+.arc{position:absolute;width:var(--d);height:var(--d);transform:rotate(-90deg)}
+.arc circle{fill:none;stroke-width:4}.arc .tr{stroke:rgba(11,13,11,.1);stroke-width:1}
+.arc .v{stroke:var(--lime-deep);stroke-linecap:square;stroke-dasharray:911.06;stroke-dashoffset:911.06;transition:stroke-dashoffset .25s linear}
+.card.run .arc .v{stroke:var(--ink)}.card.brk .arc .v{stroke:var(--orange)}
+.read{position:relative;display:flex;flex-direction:column;align-items:center;max-width:calc(var(--d)*.84)}
+.time{font-family:var(--mono);font-weight:500;font-size:calc(var(--d)*.27);line-height:1;letter-spacing:-.09em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.time.h{font-size:calc(var(--d)*.165)}
+.sub{margin-top:12px;color:#6f736a;font:500 10px var(--mono);letter-spacing:.1em;text-align:center}
+.controls{display:flex;gap:10px}
+.btn{height:54px;border:1px solid var(--dline);background:none;color:var(--ink);cursor:pointer;font-size:11px;font-weight:600;letter-spacing:.06em}
+.btn:hover{background:rgba(11,13,11,.06)}
+.btn.sec{flex:0 0 28%}.btn.pri{flex:1;background:var(--ink);color:var(--bone);border-color:var(--ink)}.btn.pri:hover{background:#212a21}
+.btn.lockin{width:100%;margin-top:10px;background:var(--lime);border-color:var(--ink)}.btn.lockin:hover{background:#c8ea4e}
+kbd{margin-left:8px;padding:2px 5px;border:1px solid rgba(128,128,128,.4);font:9px var(--mono);opacity:.6}
+.opts{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:18px;padding-top:14px;border-top:1px solid var(--dline);font:10px var(--mono);color:#6f736a}
+.tg{padding:0;border:0;background:none;color:#6f736a;cursor:pointer;font:500 10px var(--mono);letter-spacing:.08em}
+.tg::before{content:'○ '}.tg.on{color:#4d6010}.tg.on::before{content:'● '}
+.side{display:flex;flex-direction:column;gap:16px}
+.box{padding:18px;border:1px solid var(--line);background:var(--soft)}
+.cap{display:flex;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--line);color:var(--muted);font:500 10px var(--mono);letter-spacing:.12em}
+.dstat{margin:14px 0 4px;font:600 11px var(--mono);letter-spacing:.06em}.dstat.ok{color:var(--lime)}.dstat.bad{color:var(--orange)}
+#goals{list-style:none;margin:8px 0 0;padding:0}
+#goals li{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+#goals input[type=checkbox]{width:19px;height:19px;accent-color:var(--lime);flex:none;cursor:pointer}
+#goals li.done span{color:var(--muted);text-decoration:line-through}
+#goals span{flex:1;word-break:break-word}
+#goals button{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px}
+.add{display:flex;gap:6px;margin-top:12px}
+.add input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);background:var(--ink);color:var(--bone);font:12px var(--mono)}
+.add button{padding:0 12px;border:1px solid var(--lime);background:none;color:var(--lime);cursor:pointer;font:500 10px var(--mono)}
+.add button:hover{background:var(--lime);color:var(--ink)}
+.stats{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font:9px var(--mono);color:var(--muted);letter-spacing:.06em}.stats b{color:var(--bone);font-weight:500}
+.hist{display:flex;gap:4px}.hist i{width:9px;height:9px;background:#303830}.hist .pass{background:var(--lime)}.hist .fail{background:var(--orange)}
+#log{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto}
+#log li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:11px 0;border-bottom:1px solid var(--line);font-size:13px}
+#log li:last-child{border:0}
+#log small{grid-column:1/-1;color:var(--muted);font:9px var(--mono);letter-spacing:.06em}
+#log .d{font:500 12px var(--mono);color:var(--lime)}#log .part .d{color:var(--orange)}
+.empty{padding:12px 0 2px;color:var(--muted);font-size:12px}
+.toast{position:fixed;right:20px;bottom:20px;z-index:300;padding:11px 15px;background:var(--lime);color:var(--ink);font:500 10px var(--mono);letter-spacing:.05em;opacity:0;transform:translateY(12px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:none}
+
+/* lock-in screen */
+#lock{position:fixed;inset:0;z-index:100;background:#000;overflow:hidden;touch-action:manipulation}
+#lock-box{position:absolute;top:0;left:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transform-origin:0 0}
+#lock-time{display:inline-block;white-space:nowrap;color:#fff;font-family:var(--mono);font-weight:500;line-height:1;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+#lock-sub{margin-top:2vmin;color:#5d615a;font:500 13px var(--mono);letter-spacing:.2em}
+#lock-ctl{position:absolute;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;gap:14px;opacity:0;pointer-events:none;transition:opacity .25s}
+#lock-ctl.show{opacity:1;pointer-events:auto}
+#lock-ctl button{width:54px;height:54px;border:1px solid #3a3d38;border-radius:50%;background:#000;color:#aaa;font-size:20px;cursor:pointer}
+/* prompt */
+#prompt{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:20px;background:rgba(0,0,0,.88)}
+.pbox{width:min(400px,100%);padding:26px 22px;background:#0b0d0b;border:1px solid var(--lime);text-align:center}
+.pbox h3{margin:0 0 10px;color:var(--lime);font:600 13px var(--mono);letter-spacing:.12em}
+.pbox p{margin:0 0 8px;font-size:16px;line-height:1.4;color:#fff}.pbox small{display:block;margin-bottom:18px;color:var(--muted);font:10px var(--mono)}
+.pbox button{display:block;width:100%;height:50px;margin-top:8px;cursor:pointer;font-weight:600;font-size:12px;letter-spacing:.06em}
+#p-yes{background:var(--lime);border:0;color:var(--ink)}#p-no{background:none;border:1px solid var(--line);color:var(--bone)}
+@media(max-width:860px){.grid{grid-template-columns:1fr}.card{padding:20px 18px}kbd{display:none}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="brand"><span class="mark"><i></i></span>GRIND<b>.</b>TIMER</div>
+    <div class="chip" id="chip"><i></i><span id="status">READY</span></div>
+  </header>
+
+  <main class="grid">
+    <section class="card" id="card">
+      <input class="task" id="task" maxlength="60" placeholder="What are you working on?" autocomplete="off" />
+      <div class="visual">
+        <svg class="arc" viewBox="0 0 320 320" aria-hidden="true"><circle class="tr" cx="160" cy="160" r="145"/><circle class="v" id="arc" cx="160" cy="160" r="145"/></svg>
+        <div class="read"><span class="time" id="time">00:00</span><span class="sub" id="sub"></span></div>
+      </div>
+      <div class="controls">
+        <button class="btn sec" id="reset">↺ RESET <kbd>R</kbd></button>
+        <button class="btn sec" id="finish" hidden>✓ FINISH</button>
+        <button class="btn pri" id="start"><span id="start-label">▶ START</span><kbd>SPACE</kbd></button>
+      </div>
+      <button class="btn lockin" id="lockin">◼ LOCK IN <kbd>L</kbd></button>
+      <div class="opts">
+        <button class="tg on" id="t-sound" aria-pressed="true">SOUND</button>
+        <button class="tg on" id="t-vibe" aria-pressed="true">VIBRATE</button>
+        <button class="tg on" id="t-awake" aria-pressed="true">KEEP SCREEN ON</button>
+        <button class="tg on" id="t-brk" aria-pressed="true">AUTO BREAK / 1H</button>
+      </div>
+    </section>
+
+    <aside class="side">
+      <section class="box">
+        <div class="cap"><span>TODAY'S GOALS</span><span id="g-count">0/0</span></div>
+        <div class="dstat" id="dstat"></div>
+        <ul id="goals"></ul>
+        <form class="add" id="g-form"><input id="g-input" maxlength="80" placeholder="Add a goal for today" autocomplete="off" /><button>ADD</button></form>
+        <div class="stats"><span><b id="g-streak">0</b> DAY STREAK</span><span><b id="g-focus">0M</b> FOCUSED</span><span class="hist" id="hist" title="Last 7 days"></span></div>
+      </section>
+      <section class="box">
+        <div class="cap"><span>TODAY'S SESSIONS</span></div>
+        <ul id="log"></ul>
+      </section>
+    </aside>
+  </main>
+</div>
+
+<div id="lock" hidden>
+  <div id="lock-box">
+    <div id="lock-time">00:00</div><div id="lock-sub"></div>
+    <div id="lock-ctl"><button id="l-rot" aria-label="Rotate">⟳</button><button id="l-pause" aria-label="Pause or resume">❚❚</button><button id="l-exit" aria-label="Exit lock in">✕</button></div>
+  </div>
+</div>
+<div id="prompt" hidden>
+  <div class="pbox"><h3 id="p-title"></h3><p id="p-text"></p><small id="p-grace"></small>
+    <button id="p-yes"></button><button id="p-no">BACK TO WORK</button></div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const HOUR = 3600, BRK = 600, GRACE = 120, DEL_WINDOW = 5 * 60000;
+const K = { day: 'grindtimer-day', prefs: 'grindtimer-prefs', run: 'grindtimer-run' };
+
+const read = (k) => { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return v && typeof v === 'object' ? v : null; } catch { return null; } };
+const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const dkey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const today = () => dkey(new Date());
+const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
+const p2 = (n) => String(n).padStart(2, '0');
+const fmt = (sec, hours) => {
+  sec = Math.max(0, Math.floor(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60;
+  return hours ? `${p2(h)}:${p2(m)}:${p2(s)}` : `${p2(Math.floor(sec / 60))}:${p2(s)}`;
+};
+const dur = (sec) => { const m = Math.round(sec / 60), h = Math.floor(m / 60), r = m % 60; return h ? (r ? `${h}H ${r}M` : `${h}H`) : `${m}M`; };
+
+/* ---------- day, goals, streak ---------- */
+const day = Object.assign({ date: today(), goals: [], focusSeconds: 0, sessions: [], streak: 0, history: [] }, read(K.day));
+const prefs = Object.assign({ sound: true, vibration: true, awake: true, autoBreak: true, rot: false }, read(K.prefs));
+const saveDay = () => write(K.day, day);
+const savePrefs = () => write(K.prefs, prefs);
+
+function settle(date, status) {
+  day.history.push({ date, status });
+  day.history = day.history.slice(-30);
+  day.streak = status === 'pass' ? day.streak + 1 : 0;
+}
+// A day passes only if it had goals and every one was ticked. Anything else (including skipped days) is a fail.
+function roll() {
+  const t = today();
+  if (day.date >= t) return;
+  settle(day.date, day.goals.length && day.goals.every((g) => g.done) ? 'pass' : 'fail');
+  const d = new Date(day.date + 'T00:00:00');
+  for (let i = 0; i < 60; i++) { d.setDate(d.getDate() + 1); if (dkey(d) >= t) break; settle(dkey(d), 'fail'); }
+  day.date = t; day.goals = []; day.focusSeconds = 0; day.sessions = [];
+  saveDay();
+}
+roll();
+
+/* ---------- stopwatch state ---------- */
+const state = { running: false, elapsed: 0, since: 0, phase: 'work', stage: 0, breakLeft: 0, prompt: null, grace: 0, last: null, label: '' };
+let locked = false;
+
+function logSession(seconds, done) {
+  seconds = Math.round(seconds);
+  if (seconds < 60) return false;
+  roll();
+  day.focusSeconds += seconds;
+  day.sessions.unshift({ label: state.label || 'Untitled', seconds, done, at: Date.now() });
+  day.sessions = day.sessions.slice(0, 50);
+  saveDay();
+  return true;
+}
+function saveRun() {
+  const { running, elapsed, since, phase, stage, breakLeft, prompt, grace, label } = state;
+  write(K.run, { v: 2, running, elapsed, since, phase, stage, breakLeft, prompt, grace, label, savedAt: Date.now() });
+}
+
+/* ---------- feedback ---------- */
+let audio, lock = null, locking = false;
+function prime() {
+  if (!prefs.sound) return;
+  const C = window.AudioContext || window.webkitAudioContext;
+  if (!C) return;
+  audio = audio || new C();
+  if (audio.state === 'suspended') audio.resume();
+}
+function tone() {
+  if (!prefs.sound) return;
+  prime();
+  if (!audio) return;
+  const t0 = audio.currentTime + 0.02;
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+    const o = audio.createOscillator(), g = audio.createGain(), t = t0 + i * 0.14;
+    o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.16, t + 0.025);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+    o.connect(g).connect(audio.destination);
+    o.start(t); o.stop(t + 0.3);
+  });
+}
+function notify(msg) {
+  tone();
+  if (prefs.vibration && navigator.vibrate) navigator.vibrate([180, 90, 180, 90, 420]);
+  if (document.hidden && 'Notification' in window && Notification.permission === 'granted') { try { new Notification('Grind Timer', { body: msg }); } catch {} }
+  toast(msg);
+}
+async function syncLock() {
+  if (locking || !('wakeLock' in navigator)) return;
+  locking = true;
+  try {
+    if (prefs.awake && (state.running || locked) && !lock && !document.hidden) {
+      lock = await navigator.wakeLock.request('screen');
+      lock.addEventListener('release', () => { lock = null; });
+    } else if ((!prefs.awake || !(state.running || locked)) && lock) {
+      await lock.release(); lock = null;
+    }
+  } catch {}
+  locking = false;
+}
+
+/* ---------- clock: work hour -> break (10/20/30 min) -> forced back to work ---------- */
+let loop = null, lastSave = 0;
+const startLoop = () => { if (loop === null) loop = setInterval(tick, 250); };
+const stopLoop = () => { if (loop !== null) { clearInterval(loop); loop = null; } };
+
+function startBreak(silent) {
+  state.phase = 'break'; state.stage = 0; state.breakLeft = BRK; state.prompt = null; state.since = 0;
+  if (!silent) notify('HOUR DONE — 10 MIN BREAK');
+}
+function endBreak(silent, msg) {
+  state.phase = 'work'; state.stage = 0; state.prompt = null; state.since = 0; state.breakLeft = 0;
+  if (!silent) notify(msg || 'BACK TO WORK');
+}
+function breakDone(silent) {
+  if (state.stage >= 2) { endBreak(silent, 'BREAK OVER — BACK TO WORK'); return; }
+  state.prompt = state.stage === 0 ? 'extend' : 'last';
+  state.grace = GRACE;
+  if (!silent) notify(state.prompt === 'extend' ? 'BREAK TIME UP — EXTEND?' : 'LAST 10 MINUTES OF BREAK');
+}
+function extendBreak() { state.stage += 1; state.breakLeft = BRK; state.prompt = null; saveRun(); render(); }
+
+function advance(delta, silent) {
+  for (let guard = 0; delta > 0 && guard < 60; guard++) {
+    if (state.phase === 'work') {
+      const room = prefs.autoBreak ? Math.max(0, HOUR - state.since) : Infinity;
+      const use = Math.min(delta, room);
+      state.elapsed += use; state.since += use; delta -= use;
+      if (prefs.autoBreak && state.since >= HOUR - 1e-6) startBreak(silent); else break;
+    } else if (state.prompt) {
+      const use = Math.min(delta, state.grace);
+      state.grace -= use; delta -= use;
+      if (state.grace <= 0) endBreak(silent, 'NO ANSWER — BACK TO WORK'); else break;
+    } else {
+      const use = Math.min(delta, state.breakLeft);
+      state.breakLeft -= use; delta -= use;
+      if (state.breakLeft <= 1e-6) breakDone(silent); else break;
+    }
+  }
+}
+function tick() {
+  if (!state.running) { stopLoop(); return; }
+  const now = Date.now();
+  advance(Math.max(0, (now - (state.last ?? now)) / 1000));
+  state.last = now;
+  if (now - lastSave > 5000) { lastSave = now; saveRun(); }
+  render();
+}
+
+/* ---------- actions ---------- */
+function clearRun() {
+  Object.assign(state, { running: false, elapsed: 0, since: 0, phase: 'work', stage: 0, breakLeft: 0, prompt: null, grace: 0, last: null });
+  stopLoop();
+}
+function toggle() {
+  state.running = !state.running;
+  state.last = state.running ? Date.now() : null;
+  if (state.running) {
+    prime();
+    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+    startLoop();
+  } else stopLoop();
+  saveRun(); render();
+}
+function reset() { logSession(state.elapsed, false); clearRun(); saveRun(); render(); toast('RESET'); }
+function finish() {
+  const ok = logSession(state.elapsed, true);
+  clearRun(); saveRun(); render();
+  toast(ok ? 'SESSION LOGGED' : 'UNDER 1 MIN — NOT LOGGED');
+}
+function addGoal(text) {
+  text = text.trim().slice(0, 80);
+  if (!text) return;
+  roll();
+  if (day.goals.length >= 12) { toast('MAX 12 GOALS'); return; }
+  day.goals.push({ id: Date.now(), text, done: false, at: Date.now() });
+  saveDay(); renderDay();
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---------- lock-in screen ---------- */
+let ctlTimer, fitLen = 0;
+function fitLock() {
+  const ov = $('lock'), box = $('lock-box'), t = $('lock-time');
+  const W = ov.clientWidth, H = ov.clientHeight;
+  if (prefs.rot) { box.style.width = H + 'px'; box.style.height = W + 'px'; box.style.transform = `translate(${W}px,0) rotate(90deg)`; }
+  else { box.style.width = W + 'px'; box.style.height = H + 'px'; box.style.transform = 'none'; }
+  t.style.fontSize = '100px';
+  const w = t.offsetWidth || 1, h = t.offsetHeight || 100;
+  t.style.fontSize = Math.max(10, Math.floor(100 * Math.min(box.clientWidth * 0.94 / w, box.clientHeight * 0.55 / h))) + 'px';
+  fitLen = t.textContent.length;
+}
+function showCtl() {
+  $('lock-ctl').classList.add('show');
+  clearTimeout(ctlTimer);
+  ctlTimer = setTimeout(() => $('lock-ctl').classList.remove('show'), 3000);
+}
+function enterLock() {
+  locked = true; $('lock').hidden = false;
+  try { document.documentElement.requestFullscreen?.().catch(() => {}); } catch {}
+  render(); fitLock(); showCtl(); syncLock();
+}
+function exitLock() {
+  locked = false; $('lock').hidden = true;
+  try { if (document.fullscreenElement) document.exitFullscreen(); } catch {}
+  syncLock();
+}
+
+/* ---------- render ---------- */
+let wasActive = false;
+function render() {
+  const brk = state.phase === 'break';
+  const hours = !brk && state.elapsed >= HOUR;
+  const shown = brk ? state.breakLeft : state.elapsed;
+  const text = fmt(shown, hours);
+  const prog = brk ? state.breakLeft / BRK : (prefs.autoBreak ? state.since : state.elapsed % HOUR) / HOUR;
+  const status = brk ? 'BREAK' : state.running ? 'RUNNING' : state.elapsed > 0 ? 'PAUSED' : 'READY';
+  const lap = Math.floor(state.elapsed / HOUR) + 1;
+  const sub = brk ? (state.prompt ? 'WAITING FOR YOU' : `BREAK ${state.stage + 1}/3`) : (prefs.autoBreak ? `LAP ${lap} · BREAK IN ${fmt(HOUR - state.since)}` : `LAP ${lap}`);
+
+  $('time').textContent = text;
+  $('time').classList.toggle('h', hours);
+  $('sub').textContent = sub;
+  $('arc').style.strokeDashoffset = 911.06 * (1 - clamp(prog, 0, 1));
+  $('status').textContent = status;
+  $('chip').style.color = brk || status === 'PAUSED' ? 'var(--orange)' : 'var(--lime)';
+  $('start-label').textContent = state.running ? '❚❚ PAUSE' : (state.elapsed ? '▶ RESUME' : '▶ START');
+  $('card').classList.toggle('run', state.running);
+  $('card').classList.toggle('brk', brk);
+  $('finish').hidden = state.elapsed < 1;
+  document.title = state.running ? `${text} · Grind Timer` : 'Grind Timer';
+
+  [['t-sound', prefs.sound], ['t-vibe', prefs.vibration], ['t-awake', prefs.awake], ['t-brk', prefs.autoBreak]].forEach(([id, on]) => { $(id).classList.toggle('on', on); $(id).setAttribute('aria-pressed', on); });
+  $('t-vibe').hidden = typeof navigator.vibrate !== 'function';
+  $('t-awake').hidden = !('wakeLock' in navigator);
+
+  if (locked) {
+    $('lock-time').textContent = text;
+    $('lock-sub').textContent = brk ? 'BREAK' : '';
+    $('l-pause').textContent = state.running ? '❚❚' : '▶';
+    if (text.length !== fitLen) fitLock();
+  }
+
+  const p = $('prompt');
+  p.hidden = !state.prompt;
+  if (state.prompt) {
+    const extend = state.prompt === 'extend';
+    $('p-title').textContent = extend ? 'BREAK TIME UP' : 'LAST 10 MINUTES';
+    $('p-text').textContent = extend ? 'Extend the break for another 10 minutes?' : 'Final extension. After 10 more minutes you go back to work.';
+    $('p-yes').textContent = extend ? 'EXTEND 10 MIN' : 'TAKE FINAL 10 MIN';
+    $('p-grace').textContent = `Back to work automatically in ${fmt(state.grace)}`;
+  }
+
+  const active = state.running || locked;
+  if (active !== wasActive) { wasActive = active; syncLock(); }
+  renderDay();
+}
+
+let daySig = '', logSig = '';
+function renderDay() {
+  roll();
+  const n = day.goals.length, done = day.goals.filter((g) => g.done).length;
+  $('g-count').textContent = `${done}/${n}`;
+  const ds = $('dstat');
+  ds.className = 'dstat ' + (n && done === n ? 'ok' : 'bad');
+  ds.textContent = !n ? 'NO GOALS SET — DAY FAILS' : done === n ? 'ALL DONE — DAY SECURED' : `${n - done} OPEN — DAY FAILS IF ANY STAY UNTICKED`;
+  $('g-streak').textContent = day.streak;
+  $('g-focus').textContent = dur(day.focusSeconds);
+
+  const sig = day.goals.map((g) => g.id + (g.done ? 'y' : 'n')).join() + '|' + Math.floor(Date.now() / 60000) + '|' + day.history.length;
+  if (sig !== daySig) {
+    daySig = sig;
+    const ul = $('goals'); ul.textContent = '';
+    day.goals.forEach((g) => {
+      const li = document.createElement('li'); li.className = g.done ? 'done' : '';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = g.done; cb.setAttribute('aria-label', 'Completed: ' + g.text);
+      cb.addEventListener('change', () => { g.done = cb.checked; saveDay(); renderDay(); });
+      const sp = document.createElement('span'); sp.textContent = g.text;
+      li.append(cb, sp);
+      if (Date.now() - g.at < DEL_WINDOW) {   // typo window only — goals can't be deleted to dodge a fail
+        const x = document.createElement('button'); x.textContent = '✕'; x.title = 'Remove (only within 5 minutes)'; x.setAttribute('aria-label', 'Remove goal');
+        x.addEventListener('click', () => { day.goals = day.goals.filter((o) => o.id !== g.id); saveDay(); renderDay(); });
+        li.append(x);
+      }
+      ul.appendChild(li);
+    });
+    const h = $('hist'); h.textContent = '';
+    const last = day.history.slice(-7);
+    for (let i = 0; i < 7 - last.length; i++) h.appendChild(document.createElement('i'));
+    last.forEach((d) => { const i = document.createElement('i'); i.className = d.status; i.title = `${d.date}: ${d.status}`; h.appendChild(i); });
+  }
+
+  const ls = day.sessions.length + ':' + (day.sessions[0]?.at || 0);
+  if (ls !== logSig) {
+    logSig = ls;
+    const log = $('log'); log.textContent = '';
+    if (!day.sessions.length) { const e = document.createElement('li'); e.className = 'empty'; e.textContent = 'Nothing logged yet today.'; log.appendChild(e); }
+    day.sessions.forEach((s) => {
+      const li = document.createElement('li'); if (!s.done) li.className = 'part';
+      const a = document.createElement('span'); a.textContent = s.label;
+      const d = document.createElement('span'); d.className = 'd'; d.textContent = dur(s.seconds);
+      const m = document.createElement('small');
+      m.textContent = `${new Date(s.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · ${s.done ? 'FINISHED' : 'PARTIAL'}`;
+      li.append(a, d, m); log.appendChild(li);
+    });
+  }
+}
+
+/* ---------- events ---------- */
+$('start').addEventListener('click', toggle);
+$('reset').addEventListener('click', reset);
+$('finish').addEventListener('click', finish);
+$('lockin').addEventListener('click', enterLock);
+$('l-exit').addEventListener('click', (e) => { e.stopPropagation(); exitLock(); });
+$('l-pause').addEventListener('click', (e) => { e.stopPropagation(); toggle(); showCtl(); });
+$('l-rot').addEventListener('click', (e) => { e.stopPropagation(); prefs.rot = !prefs.rot; savePrefs(); fitLock(); showCtl(); });
+$('lock').addEventListener('click', showCtl);
+window.addEventListener('resize', () => { if (locked) fitLock(); });
+$('p-yes').addEventListener('click', extendBreak);
+$('p-no').addEventListener('click', () => { endBreak(true); saveRun(); render(); });
+$('task').addEventListener('input', (e) => { state.label = e.target.value.trim(); saveRun(); });
+$('g-form').addEventListener('submit', (e) => { e.preventDefault(); addGoal($('g-input').value); $('g-input').value = ''; });
+[['t-sound', 'sound'], ['t-vibe', 'vibration'], ['t-awake', 'awake'], ['t-brk', 'autoBreak']].forEach(([id, key]) => {
+  $(id).addEventListener('click', () => {
+    prefs[key] = !prefs[key]; savePrefs();
+    if (key === 'sound' && prefs.sound) prime();
+    if (key === 'awake') syncLock();
+    render();
+  });
+});
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input, textarea, select') || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+  if (e.key === 'Escape' && locked) { exitLock(); return; }
+  if (state.prompt) return;
+  const k = e.key.toLowerCase();
+  if (e.code === 'Space') { e.preventDefault(); toggle(); }
+  else if (k === 'r') reset();
+  else if (k === 'l') (locked ? exitLock() : enterLock());
+});
+document.addEventListener('keyup', (e) => { if (e.code === 'Space' && !e.target.matches('input, textarea, select')) e.preventDefault(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); syncLock(); } else saveRun(); });
+window.addEventListener('pagehide', saveRun);
+setInterval(renderDay, 60000);
+
+/* ---------- restore after reload ---------- */
+(function restore() {
+  const s = read(K.run);
+  if (!s || s.v !== 2) return;
+  state.elapsed = Math.max(0, Number(s.elapsed) || 0);
+  state.since = clamp(Number(s.since) || 0, 0, HOUR);
+  state.phase = s.phase === 'break' ? 'break' : 'work';
+  state.stage = clamp(Math.round(Number(s.stage)) || 0, 0, 2);
+  state.breakLeft = clamp(Number(s.breakLeft) || 0, 0, BRK);
+  state.prompt = s.prompt === 'extend' || s.prompt === 'last' ? s.prompt : null;
+  state.grace = clamp(Number(s.grace) || 0, 0, GRACE);
+  state.label = String(s.label || '').slice(0, 60);
+  $('task').value = state.label;
+  if (s.running && s.savedAt) {
+    state.running = true;
+    advance(Math.max(0, (Date.now() - s.savedAt) / 1000), true);
+    state.last = Date.now(); startLoop();
+  }
+})();
+render();
+</script>
+</body>
+</html>
